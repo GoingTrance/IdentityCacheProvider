@@ -71,6 +71,19 @@ namespace InterSystems.AspNet.Identity.Cache
 
         #region Helpers
 
+        private List<string> GetExistingTables(CacheConnection connection)
+        {
+            var tables = new List<string>();
+            using (var command = new CacheCommand(ExistingTablesQuery, connection))
+            using (var tablesReader = command.ExecuteReader())
+            {
+                while (tablesReader.Read())
+                    tables.Add(tablesReader[0].ToString());
+            }
+
+            return tables;
+        }
+
         private string GetTableQuery(string name)
         {
             switch (name)
@@ -97,21 +110,18 @@ namespace InterSystems.AspNet.Identity.Cache
                     command.ExecuteScalar();
         }
 
-        private void CreateIndexesIfNotExists(CacheConnection connection)
+        private void CreateIndexesIfNotExist(CacheConnection connection)
         {
-            using (CacheCommand checkUserIndex = new CacheCommand(CheckUserNameIndexQuery, connection), checkRoleIndex = new CacheCommand(CheckRoleNameIndexQuery, connection))
+            using (CacheCommand checkUserIndex = new CacheCommand(CheckUserNameIndexQuery, connection), 
+                                checkRoleIndex = new CacheCommand(CheckRoleNameIndexQuery, connection))
             {
                 if (checkUserIndex.ExecuteNonQuery() == 0)
-                {
                     using (var createUserIndex = new CacheCommand(UserNameIndexQuery, connection))
                         createUserIndex.ExecuteNonQuery();
-                }
 
                 if (checkRoleIndex.ExecuteNonQuery() == 0)
-                {
                     using (var createRoleIndex = new CacheCommand(RoleNameIndexQuery, connection))
                         createRoleIndex.ExecuteNonQuery();
-                }
             }
         }
 
@@ -125,19 +135,6 @@ namespace InterSystems.AspNet.Identity.Cache
         }
 
         #endregion
-
-        private List<string> GetExistingTables(CacheConnection connection)
-        {
-            var tables = new List<string>();
-            using (var command = new CacheCommand(ExistingTablesQuery, connection))
-            using (var tablesReader = command.ExecuteReader())
-            {
-                while (tablesReader.Read())
-                    tables.Add(tablesReader[0].ToString());
-            }
-
-            return tables;
-        }
 
         /// <summary>
         /// Provides needed initializations for the database context.
@@ -154,7 +151,7 @@ namespace InterSystems.AspNet.Identity.Cache
                 CreateTableIfNotExists(tables, AspNetUserRoles, connection);
                 CreateTableIfNotExists(tables, AspNetUserClaims, connection);
                 CreateTableIfNotExists(tables, AspNetUserLogins, connection);
-                CreateIndexesIfNotExists(connection);
+                CreateIndexesIfNotExist(connection);
             }
         }
     }
