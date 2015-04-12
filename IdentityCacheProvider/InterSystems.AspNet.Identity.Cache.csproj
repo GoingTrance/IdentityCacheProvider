@@ -7,8 +7,8 @@
     <ProjectGuid>{A7B869A8-33E6-4A4F-A22E-97E1527D589D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>IdentityCacheProvider</RootNamespace>
-    <AssemblyName>IdentityCacheProvider</AssemblyName>
+    <RootNamespace>InterSystems.AspNet.Identity.Cache</RootNamespace>
+    <AssemblyName>InterSystems.AspNet.Identity.Cache</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

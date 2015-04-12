@@ -1,6 +1,4 @@
-﻿// Copyright (c) KHNURE, Inc. All rights reserved.
-
-namespace Intersystems.AspNet.Identity.Cache
+﻿namespace InterSystems.AspNet.Identity.Cache
 {
     /// <summary>
     ///     EntityType that represents one specific user claim

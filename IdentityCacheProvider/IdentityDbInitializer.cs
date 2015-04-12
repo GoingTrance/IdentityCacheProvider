@@ -1,24 +1,71 @@
-﻿// Copyright (c) KHNURE, Inc. All rights reserved.
-
-using InterSystems.Data.CacheClient;
+﻿using InterSystems.Data.CacheClient;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 
-namespace Intersystems.AspNet.Identity.Cache
+namespace InterSystems.AspNet.Identity.Cache
 {
+    /// <summary>
+    /// Default initializer that uses Cache database and enables ASP.NET Identity to work with it.
+    /// </summary>
     class IdentityDbInitializer : CreateDatabaseIfNotExists<IdentityDbContext>
     {
         #region Constants
-        
+
         private const string AspNetUsers = "DBO.AspNetUsers";
         private const string AspNetRoles = "DBO.AspNetRoles";
         private const string AspNetUserRoles = "DBO.AspNetUserRoles";
         private const string AspNetUserClaims = "DBO.AspNetUserClaims";
         private const string AspNetUserLogins = "DBO.AspNetUserLogins";
 
-        private const string ExistingTablesQuery = "SELECT id FROM %Dictionary.CompiledClass WHERE SqlTableName='AspNetUsers' OR SqlTableName='AspNetRoles' OR SqlTableName='AspNetUserRoles' OR SqlTableName='AspNetUserClaims' OR SqlTableName='AspNetUserLogins'";
+        private const string UserNameIndexQuery = "CREATE UNIQUE INDEX UserNameIndex ON DBO.AspNetUsers(UserName)";
+        private const string RoleNameIndexQuery = "CREATE UNIQUE INDEX RoleNameIndex ON DBO.AspNetRoles(Name)";
+        private const string CheckUserNameIndexQuery = string.Format("SELECT * FROM %Dictionary.CompiledIndex WHERE Name='UserNameIndex' AND Origin='{0}'", AspNetUsers);
+        private const string CheckRoleNameIndexQuery = string.Format("SELECT * FROM %Dictionary.CompiledIndex WHERE Name='RoleNameIndex' AND Origin='{0}'", AspNetRoles);
+
+
+        private const string ExistingTablesQuery = @"SELECT id 
+                                                     FROM %Dictionary.CompiledClass 
+                                                     WHERE SqlTableName='AspNetUsers' 
+                                                     OR SqlTableName='AspNetRoles' 
+                                                     OR SqlTableName='AspNetUserRoles' 
+                                                     OR SqlTableName='AspNetUserClaims' 
+                                                     OR SqlTableName='AspNetUserLogins'";
+
+        private const string AspNetUsersQuery = @"CREATE TABLE DBO.AspNetUsers (Id nvarchar(128) NOT NULL PRIMARY KEY, 
+                                                     EmailConfirmed bit NOT NULL, 
+                                                     PasswordHash nvarchar(MAX), 
+                                                     SecurityStamp nvarchar(MAX), 
+                                                     PhoneNumber nvarchar(MAX), 
+                                                     PhoneNumberConfirmed bit NOT NULL, 
+                                                     TwoFactorEnabled bit NOT NULL, 
+                                                     LockoutEndDateUtc datetime, 
+                                                     LockoutEnabled bit NOT NULL, 
+                                                     AccessFailedCount int NOT NULL, 
+                                                     UserName nvarchar(256) NOT NULL UNIQUE)";
+
+        private const string AspNetRolesQuery = @"CREATE TABLE DBO.AspNetRoles (Id nvarchar(128) NOT NULL PRIMARY KEY, 
+                                                     Name nvarchar(256))";
+
+        private const string AspNetUserRolesQuery = @"CREATE TABLE DBO.AspNetUserRoles (UserId nvarchar(128) NOT NULL, 
+                                                     RoleId nvarchar(128), 
+                                                     CONSTRAINT PK_AspNetUserRoles PRIMARY KEY CLUSTERED (UserId), 
+                                                     FOREIGN KEY (UserId) REFERENCES DBO.AspNetUsers(Id), 
+                                                     FOREIGN KEY (RoleId) REFERENCES DBO.AspNetRoles(Id))";
+
+        private const string AspNetUserClaimsQuery = @"CREATE TABLE DBO.AspNetUserClaims (Id int NOT NULL, 
+                                                     UserId nvarchar(128) NOT NULL, 
+                                                     ClaimType nvarchar(MAX), 
+                                                     ClaimValue nvarchar(MAX), 
+                                                     CONSTRAINT PK_AspNetUserClaims PRIMARY KEY CLUSTERED (Id), 
+                                                     FOREIGN KEY (UserId) REFERENCES DBO.AspNetUsers(Id))";
+
+        private const string AspNetUserLoginsQuery = @"CREATE TABLE DBO.AspNetUserLogins (LoginProvider NVARCHAR(128) NOT NULL, 
+                                                     ProviderKey NVARCHAR(128) NOT NULL, 
+                                                     UserId NVARCHAR(128) NOT NULL, 
+                                                     CONSTRAINT PK_AspNetUserLogins PRIMARY KEY CLUSTERED (LoginProvider, ProviderKey, UserId), 
+                                                     FOREIGN KEY (UserId) REFERENCES DBO.AspNetUsers(Id))";
 
         #endregion
 
@@ -29,15 +76,15 @@ namespace Intersystems.AspNet.Identity.Cache
             switch (name)
             {
                 case AspNetUsers:
-                    return "CREATE TABLE DBO.AspNetUsers (Id nvarchar(128) NOT NULL PRIMARY KEY, Email nvarchar(256), EmailConfirmed bit NOT NULL, PasswordHash nvarchar(MAX), SecurityStamp nvarchar(MAX), PhoneNumber nvarchar(MAX), PhoneNumberConfirmed bit NOT NULL, TwoFactorEnabled bit NOT NULL, LockoutEndDateUtc datetime, LockoutEnabled bit NOT NULL, AccessFailedCount int NOT NULL, UserName nvarchar(256) NOT NULL UNIQUE)";
+                    return AspNetUsersQuery;
                 case AspNetRoles:
-                    return "CREATE TABLE DBO.AspNetRoles (Id nvarchar(128) NOT NULL PRIMARY KEY, Name nvarchar(256))";
+                    return AspNetRolesQuery;
                 case AspNetUserRoles:
-                    return "CREATE TABLE DBO.AspNetUserRoles (UserId nvarchar(128) NOT NULL, RoleId nvarchar(128), CONSTRAINT PK_AspNetUserRoles PRIMARY KEY CLUSTERED (UserId), FOREIGN KEY (UserId) REFERENCES DBO.AspNetUsers(Id), FOREIGN KEY (RoleId) REFERENCES DBO.AspNetRoles(Id))";
+                    return AspNetUserRolesQuery;
                 case AspNetUserClaims:
-                    return "CREATE TABLE DBO.AspNetUserClaims (Id int NOT NULL, UserId nvarchar(128) NOT NULL, ClaimType nvarchar(MAX), ClaimValue nvarchar(MAX), CONSTRAINT PK_AspNetUserClaims PRIMARY KEY CLUSTERED (Id), FOREIGN KEY (UserId) REFERENCES DBO.AspNetUsers(Id))";
+                    return AspNetUserClaimsQuery;
                 case AspNetUserLogins:
-                    return "CREATE TABLE DBO.AspNetUserLogins (LoginProvider NVARCHAR(128) NOT NULL, ProviderKey NVARCHAR(128) NOT NULL, UserId NVARCHAR(128) NOT NULL, CONSTRAINT PK_AspNetUserLogins PRIMARY KEY CLUSTERED (LoginProvider, ProviderKey, UserId), FOREIGN KEY (UserId) REFERENCES DBO.AspNetUsers(Id))";
+                    return AspNetUserLoginsQuery;
                 default:
                     throw new ArgumentException("Unexpected table name!");
             }
@@ -50,6 +97,24 @@ namespace Intersystems.AspNet.Identity.Cache
                     command.ExecuteScalar();
         }
 
+        private void CreateIndexesIfNotExists(CacheConnection connection)
+        {
+            using (CacheCommand checkUserIndex = new CacheCommand(CheckUserNameIndexQuery, connection), checkRoleIndex = new CacheCommand(CheckRoleNameIndexQuery, connection))
+            {
+                if (checkUserIndex.ExecuteNonQuery() == 0)
+                {
+                    using (var createUserIndex = new CacheCommand(UserNameIndexQuery, connection))
+                        createUserIndex.ExecuteNonQuery();
+                }
+
+                if (checkRoleIndex.ExecuteNonQuery() == 0)
+                {
+                    using (var createRoleIndex = new CacheCommand(RoleNameIndexQuery, connection))
+                        createRoleIndex.ExecuteNonQuery();
+                }
+            }
+        }
+
         private CacheConnection BuildConnection(IdentityDbContext context)
         {
             var connection = new CacheConnection();
@@ -58,9 +123,9 @@ namespace Intersystems.AspNet.Identity.Cache
 
             return connection;
         }
- 
+
         #endregion
-        
+
         private List<string> GetExistingTables(CacheConnection connection)
         {
             var tables = new List<string>();
@@ -89,6 +154,7 @@ namespace Intersystems.AspNet.Identity.Cache
                 CreateTableIfNotExists(tables, AspNetUserRoles, connection);
                 CreateTableIfNotExists(tables, AspNetUserClaims, connection);
                 CreateTableIfNotExists(tables, AspNetUserLogins, connection);
+                CreateIndexesIfNotExists(connection);
             }
         }
     }

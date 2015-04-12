@@ -1,6 +1,4 @@
-﻿// Copyright (c) KHNURE, Inc. All rights reserved.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Common;
@@ -11,7 +9,7 @@ using System.Data.Entity.Validation;
 using System.Globalization;
 using System.Linq;
 
-namespace Intersystems.AspNet.Identity.Cache
+namespace InterSystems.AspNet.Identity.Cache
 {
     /// <summary>
     /// Default IdentityDbContext that uses the default entity types for ASP.NET Identity Users, Roles, Claims, Logins. 
@@ -38,35 +36,6 @@ namespace Intersystems.AspNet.Identity.Cache
         }
 
         /// <summary>
-        ///     Constructs a new context instance using the existing connection to connect to a database, and initializes it from
-        ///     the given model.  The connection will not be disposed when the context is disposed if contextOwnsConnection is
-        ///     false.
-        /// </summary>
-        /// <param name="existingConnection">An existing connection to use for the new context.</param>
-        /// <param name="model">The model that will back this context.</param>
-        /// <param name="contextOwnsConnection">
-        ///     Constructs a new context instance using the existing connection to connect to a
-        ///     database, and initializes it from the given model.  The connection will not be disposed when the context is
-        ///     disposed if contextOwnsConnection is false.
-        /// </param>
-        public IdentityDbContext(DbConnection existingConnection, DbCompiledModel model, bool contextOwnsConnection)
-            : base(existingConnection, model, contextOwnsConnection)
-        {
-        }
-
-        /// <summary>
-        ///     Constructs a new context instance using conventions to create the name of
-        ///     the database to which a connection will be made, and initializes it from
-        ///     the given model.  The by-convention name is the full name (namespace + class
-        ///     name) of the derived context class.
-        /// </summary>
-        /// <param name="model">The model that will back this context.</param>
-        public IdentityDbContext(DbCompiledModel model)
-            : base(model)
-        {
-        }
-
-        /// <summary>
         ///     Constructs a new context instance using the existing connection to connect
         ///     to a database.  The connection will not be disposed when the context is disposed
         ///     if contextOwnsConnection is false.
@@ -77,18 +46,6 @@ namespace Intersystems.AspNet.Identity.Cache
         /// </param>
         public IdentityDbContext(DbConnection existingConnection, bool contextOwnsConnection)
             : base(existingConnection, contextOwnsConnection)
-        {
-        }
-
-        /// <summary>
-        ///     Constructs a new context instance using the given string as the name or connection
-        ///     string for the database to which a connection will be made, and initializes
-        ///     it from the given model.
-        /// </summary>
-        /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
-        /// <param name="model">The model that will back this context.</param>
-        public IdentityDbContext(string nameOrConnectionString, DbCompiledModel model)
-            : base(nameOrConnectionString, model)
         {
         }
     }
@@ -115,7 +72,6 @@ namespace Intersystems.AspNet.Identity.Cache
         public IdentityDbContext()
             : this("DefaultConnection")
         {
-            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
         }
 
         /// <summary>
@@ -124,37 +80,6 @@ namespace Intersystems.AspNet.Identity.Cache
         /// <param name="nameOrConnectionString"></param>
         public IdentityDbContext(string nameOrConnectionString)
             : base(nameOrConnectionString)
-        {
-            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
-        }
-
-        /// <summary>
-        ///     Constructs a new context instance using the existing connection to connect to a database, and initializes it from
-        ///     the given model.  The connection will not be disposed when the context is disposed if contextOwnsConnection is
-        ///     false.
-        /// </summary>
-        /// <param name="existingConnection">An existing connection to use for the new context.</param>
-        /// <param name="model">The model that will back this context.</param>
-        /// <param name="contextOwnsConnection">
-        ///     Constructs a new context instance using the existing connection to connect to a
-        ///     database, and initializes it from the given model.  The connection will not be disposed when the context is
-        ///     disposed if contextOwnsConnection is false.
-        /// </param>
-        public IdentityDbContext(DbConnection existingConnection, DbCompiledModel model, bool contextOwnsConnection)
-            : base(existingConnection, model, contextOwnsConnection)
-        {
-            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
-        }
-
-        /// <summary>
-        ///     Constructs a new context instance using conventions to create the name of
-        ///     the database to which a connection will be made, and initializes it from
-        ///     the given model.  The by-convention name is the full name (namespace + class
-        ///     name) of the derived context class.
-        /// </summary>
-        /// <param name="model">The model that will back this context.</param>
-        public IdentityDbContext(DbCompiledModel model)
-            : base(model)
         {
             Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
         }
@@ -175,19 +100,6 @@ namespace Intersystems.AspNet.Identity.Cache
         }
 
         /// <summary>
-        ///     Constructs a new context instance using the given string as the name or connection
-        ///     string for the database to which a connection will be made, and initializes
-        ///     it from the given model.
-        /// </summary>
-        /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
-        /// <param name="model">The model that will back this context.</param>
-        public IdentityDbContext(string nameOrConnectionString, DbCompiledModel model)
-            : base(nameOrConnectionString, model)
-        {
-            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
-        }
-
-        /// <summary>
         ///     IDbSet of Users
         /// </summary>
         public virtual IDbSet<TUser> Users { get; set; }
@@ -200,52 +112,7 @@ namespace Intersystems.AspNet.Identity.Cache
         /// <summary>
         ///     If true validates that emails are unique
         /// </summary>
-        public bool RequireUniqueEmail { get; set; }
-
-        /// <summary>
-        ///     Maps table names, and sets up relationships between the various user entities
-        /// </summary>
-        /// <param name="modelBuilder"></param>
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
-        {
-            if (modelBuilder == null)
-            {
-                throw new ArgumentNullException("modelBuilder");
-            }
-
-            // Needed to ensure subclasses share the same table
-            var user = modelBuilder.Entity<TUser>()
-                .ToTable("AspNetUsers");
-            user.HasMany(u => u.Roles).WithRequired().HasForeignKey(ur => ur.UserId);
-            user.HasMany(u => u.Claims).WithRequired().HasForeignKey(uc => uc.UserId);
-            user.HasMany(u => u.Logins).WithRequired().HasForeignKey(ul => ul.UserId);
-            user.Property(u => u.UserName)
-                .IsRequired()
-                .HasMaxLength(256)
-                .HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("UserNameIndex") { IsUnique = true }));
-
-            // CONSIDER: u.Email is Required if set on options?
-            user.Property(u => u.Email).HasMaxLength(256);
-
-            modelBuilder.Entity<TUserRole>()
-                .HasKey(r => new { r.UserId, r.RoleId })
-                .ToTable("AspNetUserRoles");
-
-            modelBuilder.Entity<TUserLogin>()
-                .HasKey(l => new { l.LoginProvider, l.ProviderKey, l.UserId })
-                .ToTable("AspNetUserLogins");
-
-            modelBuilder.Entity<TUserClaim>()
-                .ToTable("AspNetUserClaims");
-
-            var role = modelBuilder.Entity<TRole>()
-                .ToTable("AspNetRoles");
-            role.Property(r => r.Name)
-                .IsRequired()
-                .HasMaxLength(256)
-                .HasColumnAnnotation("Index", new IndexAnnotation(new IndexAttribute("RoleNameIndex") { IsUnique = true }));
-            role.HasMany(r => r.Users).WithRequired().HasForeignKey(ur => ur.RoleId);
-        }
+        public bool RequireUniqueEmail { get; set; }        
 
         /// <summary>
         ///     Validates that UserNames are unique and case insenstive

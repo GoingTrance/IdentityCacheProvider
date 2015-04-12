@@ -1,6 +1,4 @@
-﻿// Copyright (c) KHNURE, Inc. All rights reserved.
-
-namespace Intersystems.AspNet.Identity.Cache
+﻿namespace InterSystems.AspNet.Identity.Cache
 {
     /// <summary>
     ///     Entity type for a user's login (i.e. facebook, google)

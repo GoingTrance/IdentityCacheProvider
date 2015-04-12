@@ -1,4 +1,4 @@
-﻿namespace Intersystems.AspNet.Identity.Cache
+﻿namespace InterSystems.AspNet.Identity.Cache
 {
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.

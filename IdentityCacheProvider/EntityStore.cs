@@ -1,10 +1,8 @@
-﻿// Copyright (c) KHNURE, Inc. All rights reserved.
-
-using System.Data.Entity;
+﻿using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Intersystems.AspNet.Identity.Cache
+namespace InterSystems.AspNet.Identity.Cache
 {
     /// <summary>
     ///     EntityFramework based IIdentityEntityStore that allows query/manipulation of a TEntity set

@@ -1,10 +1,8 @@
-﻿// Copyright (c) KHNURE, Inc. All rights reserved.
-
-using Microsoft.AspNet.Identity;
+﻿using Microsoft.AspNet.Identity;
 using System;
 using System.Collections.Generic;
 
-namespace Intersystems.AspNet.Identity.Cache
+namespace InterSystems.AspNet.Identity.Cache
 {
     /// <summary>
     ///     Represents a Role entity
