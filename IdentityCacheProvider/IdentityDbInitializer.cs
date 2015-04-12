@@ -21,8 +21,8 @@ namespace InterSystems.AspNet.Identity.Cache
 
         private const string UserNameIndexQuery = "CREATE UNIQUE INDEX UserNameIndex ON DBO.AspNetUsers(UserName)";
         private const string RoleNameIndexQuery = "CREATE UNIQUE INDEX RoleNameIndex ON DBO.AspNetRoles(Name)";
-        private const string CheckUserNameIndexQuery = string.Format("SELECT * FROM %Dictionary.CompiledIndex WHERE Name='UserNameIndex' AND Origin='{0}'", AspNetUsers);
-        private const string CheckRoleNameIndexQuery = string.Format("SELECT * FROM %Dictionary.CompiledIndex WHERE Name='RoleNameIndex' AND Origin='{0}'", AspNetRoles);
+        private readonly string CheckUserNameIndexQuery = string.Format("SELECT * FROM %Dictionary.CompiledIndex WHERE Name='UserNameIndex' AND Origin='{0}'", AspNetUsers);
+        private readonly string CheckRoleNameIndexQuery = string.Format("SELECT * FROM %Dictionary.CompiledIndex WHERE Name='RoleNameIndex' AND Origin='{0}'", AspNetRoles);
 
 
         private const string ExistingTablesQuery = @"SELECT id 
