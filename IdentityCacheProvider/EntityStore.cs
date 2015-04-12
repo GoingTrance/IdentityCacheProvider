@@ -4,7 +4,7 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Microsoft.AspNet.Identity.EntityFramework
+namespace Intersystems.AspNet.Identity.Cache
 {
     /// <summary>
     ///     EntityFramework based IIdentityEntityStore that allows query/manipulation of a TEntity set

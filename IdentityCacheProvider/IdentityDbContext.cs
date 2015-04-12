@@ -8,12 +8,10 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.Validation;
-using System.Data.SqlClient;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 
-namespace Microsoft.AspNet.Identity.EntityFramework
+namespace Intersystems.AspNet.Identity.Cache
 {
     /// <summary>
     /// Default IdentityDbContext that uses the default entity types for ASP.NET Identity Users, Roles, Claims, Logins. 
@@ -37,8 +35,6 @@ namespace Microsoft.AspNet.Identity.EntityFramework
         public IdentityDbContext(string nameOrConnectionString)
             : base(nameOrConnectionString)
         {
-            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
-            Database.Initialize(true);
         }
 
         /// <summary>
@@ -62,8 +58,7 @@ namespace Microsoft.AspNet.Identity.EntityFramework
         ///     Constructs a new context instance using conventions to create the name of
         ///     the database to which a connection will be made, and initializes it from
         ///     the given model.  The by-convention name is the full name (namespace + class
-        ///     name) of the derived context class.  See the class remarks for how this is
-        ///     used to create a connection.
+        ///     name) of the derived context class.
         /// </summary>
         /// <param name="model">The model that will back this context.</param>
         public IdentityDbContext(DbCompiledModel model)
@@ -88,161 +83,13 @@ namespace Microsoft.AspNet.Identity.EntityFramework
         /// <summary>
         ///     Constructs a new context instance using the given string as the name or connection
         ///     string for the database to which a connection will be made, and initializes
-        ///     it from the given model.  See the class remarks for how this is used to create
-        ///     a connection.
+        ///     it from the given model.
         /// </summary>
         /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
         /// <param name="model">The model that will back this context.</param>
         public IdentityDbContext(string nameOrConnectionString, DbCompiledModel model)
             : base(nameOrConnectionString, model)
         {
-        }
-    }
-
-    /// <summary>
-    ///     DbContext which uses a custom user entity with a string primary key
-    /// </summary>
-    /// <typeparam name="TUser"></typeparam>
-    public class IdentityDbContext<TUser> :
-        IdentityDbContext<TUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>
-        where TUser : IdentityUser
-    {
-        /// <summary>
-        ///     Default constructor which uses the DefaultConnection
-        /// </summary>
-        public IdentityDbContext()
-            : this("DefaultConnection")
-        {
-        }
-
-        /// <summary>
-        ///     Constructor which takes the connection string to use
-        /// </summary>
-        /// <param name="nameOrConnectionString"></param>
-        public IdentityDbContext(string nameOrConnectionString)
-            : this(nameOrConnectionString, true)
-        {
-        }
-
-        /// <summary>
-        ///     Constructor which takes the connection string to use
-        /// </summary>
-        /// <param name="nameOrConnectionString"></param>
-        /// <param name="throwIfV1Schema">Will throw an exception if the schema matches that of Identity 1.0.0</param>
-        public IdentityDbContext(string nameOrConnectionString, bool throwIfV1Schema)
-            : base(nameOrConnectionString)
-        {
-            if (throwIfV1Schema && IsIdentityV1Schema(this))
-            {
-                throw new InvalidOperationException(IdentityResources.IdentityV1SchemaError);
-            }
-        }
-
-        /// <summary>
-        ///     Constructs a new context instance using the existing connection to connect to a database, and initializes it from
-        ///     the given model.  The connection will not be disposed when the context is disposed if contextOwnsConnection is
-        ///     false.
-        /// </summary>
-        /// <param name="existingConnection">An existing connection to use for the new context.</param>
-        /// <param name="model">The model that will back this context.</param>
-        /// <param name="contextOwnsConnection">
-        ///     Constructs a new context instance using the existing connection to connect to a
-        ///     database, and initializes it from the given model.  The connection will not be disposed when the context is
-        ///     disposed if contextOwnsConnection is false.
-        /// </param>
-        public IdentityDbContext(DbConnection existingConnection, DbCompiledModel model, bool contextOwnsConnection)
-            : base(existingConnection, model, contextOwnsConnection)
-        {
-        }
-
-        /// <summary>
-        ///     Constructs a new context instance using conventions to create the name of
-        ///     the database to which a connection will be made, and initializes it from
-        ///     the given model.  The by-convention name is the full name (namespace + class
-        ///     name) of the derived context class.  See the class remarks for how this is
-        ///     used to create a connection.
-        /// </summary>
-        /// <param name="model">The model that will back this context.</param>
-        public IdentityDbContext(DbCompiledModel model)
-            : base(model)
-        {
-        }
-
-        /// <summary>
-        ///     Constructs a new context instance using the existing connection to connect
-        ///     to a database.  The connection will not be disposed when the context is disposed
-        ///     if contextOwnsConnection is false.
-        /// </summary>
-        /// <param name="existingConnection">An existing connection to use for the new context.</param>
-        /// <param name="contextOwnsConnection">If set to true the connection is disposed when the context is disposed, otherwise
-        ///     the caller must dispose the connection.
-        /// </param>
-        public IdentityDbContext(DbConnection existingConnection, bool contextOwnsConnection)
-            : base(existingConnection, contextOwnsConnection)
-        {
-        }
-
-        /// <summary>
-        ///     Constructs a new context instance using the given string as the name or connection
-        ///     string for the database to which a connection will be made, and initializes
-        ///     it from the given model.  See the class remarks for how this is used to create
-        ///     a connection.
-        /// </summary>
-        /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
-        /// <param name="model">The model that will back this context.</param>
-        public IdentityDbContext(string nameOrConnectionString, DbCompiledModel model)
-            : base(nameOrConnectionString, model)
-        {
-        }
-
-        internal static bool IsIdentityV1Schema(DbContext db)
-        {
-            var originalConnection = db.Database.Connection as SqlConnection;
-            // Give up and assume its ok if its not a sql connection
-            if (originalConnection == null)
-            {
-                return false;
-            }
-
-            if (db.Database.Exists())
-            {
-                using (var tempConnection = new SqlConnection(originalConnection.ConnectionString))
-                {
-                    tempConnection.Open();
-                    return
-                        VerifyColumns(tempConnection, "AspNetUsers", "Id", "UserName", "PasswordHash", "SecurityStamp",
-                            "Discriminator") &&
-                        VerifyColumns(tempConnection, "AspNetRoles", "Id", "Name") &&
-                        VerifyColumns(tempConnection, "AspNetUserRoles", "UserId", "RoleId") &&
-                        VerifyColumns(tempConnection, "AspNetUserClaims", "Id", "ClaimType", "ClaimValue", "User_Id") &&
-                        VerifyColumns(tempConnection, "AspNetUserLogins", "UserId", "ProviderKey", "LoginProvider");
-                }
-            }
-
-            return false;
-        }
-
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities",
-            Justification = "Reviewed")]
-        internal static bool VerifyColumns(SqlConnection conn, string table, params string[] columns)
-        {
-            var tableColumns = new List<string>();
-            using (
-                var command =
-                    new SqlCommand("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=@Table", conn))
-            {
-                command.Parameters.Add(new SqlParameter("Table", table));
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        // Add all the columns from the table
-                        tableColumns.Add(reader.GetString(0));
-                    }
-                }
-            }
-            // Make sure that we find all the expected columns
-            return columns.All(tableColumns.Contains);
         }
     }
 
@@ -268,6 +115,7 @@ namespace Microsoft.AspNet.Identity.EntityFramework
         public IdentityDbContext()
             : this("DefaultConnection")
         {
+            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
         }
 
         /// <summary>
@@ -277,6 +125,7 @@ namespace Microsoft.AspNet.Identity.EntityFramework
         public IdentityDbContext(string nameOrConnectionString)
             : base(nameOrConnectionString)
         {
+            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
         }
 
         /// <summary>
@@ -294,19 +143,20 @@ namespace Microsoft.AspNet.Identity.EntityFramework
         public IdentityDbContext(DbConnection existingConnection, DbCompiledModel model, bool contextOwnsConnection)
             : base(existingConnection, model, contextOwnsConnection)
         {
+            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
         }
 
         /// <summary>
         ///     Constructs a new context instance using conventions to create the name of
         ///     the database to which a connection will be made, and initializes it from
         ///     the given model.  The by-convention name is the full name (namespace + class
-        ///     name) of the derived context class.  See the class remarks for how this is
-        ///     used to create a connection.
+        ///     name) of the derived context class.
         /// </summary>
         /// <param name="model">The model that will back this context.</param>
         public IdentityDbContext(DbCompiledModel model)
             : base(model)
         {
+            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
         }
 
         /// <summary>
@@ -321,19 +171,20 @@ namespace Microsoft.AspNet.Identity.EntityFramework
         public IdentityDbContext(DbConnection existingConnection, bool contextOwnsConnection)
             : base(existingConnection, contextOwnsConnection)
         {
+            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
         }
 
         /// <summary>
         ///     Constructs a new context instance using the given string as the name or connection
         ///     string for the database to which a connection will be made, and initializes
-        ///     it from the given model.  See the class remarks for how this is used to create
-        ///     a connection.
+        ///     it from the given model.
         /// </summary>
         /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
         /// <param name="model">The model that will back this context.</param>
         public IdentityDbContext(string nameOrConnectionString, DbCompiledModel model)
             : base(nameOrConnectionString, model)
         {
+            Database.SetInitializer<IdentityDbContext>(new IdentityDbInitializer());
         }
 
         /// <summary>

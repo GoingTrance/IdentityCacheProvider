@@ -1,12 +1,13 @@
 ﻿// Copyright (c) KHNURE, Inc. All rights reserved.
 
+using Microsoft.AspNet.Identity;
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.AspNet.Identity.EntityFramework
+namespace Intersystems.AspNet.Identity.Cache
 {
     /// <summary>
-    ///     Default EntityFramework IUser implementation
+    ///     IUser implementation
     /// </summary>
     public class IdentityUser : IdentityUser<string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>, IUser
     {
@@ -30,7 +31,7 @@ namespace Microsoft.AspNet.Identity.EntityFramework
     }
 
     /// <summary>
-    ///     Default EntityFramework IUser implementation
+    ///     IUser implementation
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TLogin"></typeparam>
