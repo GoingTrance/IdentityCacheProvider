@@ -21,10 +21,9 @@ namespace InterSystems.AspNet.Identity.Cache
 
         private const string UserNameIndexQuery = "CREATE UNIQUE INDEX UserNameIndex ON DBO.AspNetUsers(UserName)";
         private const string RoleNameIndexQuery = "CREATE UNIQUE INDEX RoleNameIndex ON DBO.AspNetRoles(Name)";
-        private readonly string CheckUserNameIndexQuery = string.Format("SELECT * FROM %Dictionary.CompiledIndex WHERE Name='UserNameIndex' AND Origin='{0}'", AspNetUsers);
-        private readonly string CheckRoleNameIndexQuery = string.Format("SELECT * FROM %Dictionary.CompiledIndex WHERE Name='RoleNameIndex' AND Origin='{0}'", AspNetRoles);
-
-
+        private readonly string CheckUserNameIndexQuery = string.Format("SELECT Count(*) FROM %Dictionary.CompiledIndex WHERE Name='UserNameIndex' AND Origin='{0}'", AspNetUsers);
+        private readonly string CheckRoleNameIndexQuery = string.Format("SELECT Count(*) FROM %Dictionary.CompiledIndex WHERE Name='RoleNameIndex' AND Origin='{0}'", AspNetRoles);
+        
         private const string ExistingTablesQuery = @"SELECT id 
                                                      FROM %Dictionary.CompiledClass 
                                                      WHERE SqlTableName='AspNetUsers' 
@@ -34,6 +33,7 @@ namespace InterSystems.AspNet.Identity.Cache
                                                      OR SqlTableName='AspNetUserLogins'";
 
         private const string AspNetUsersQuery = @"CREATE TABLE DBO.AspNetUsers (Id nvarchar(128) NOT NULL PRIMARY KEY, 
+                                                     Email nvarchar(256),
                                                      EmailConfirmed bit NOT NULL, 
                                                      PasswordHash nvarchar(MAX), 
                                                      SecurityStamp nvarchar(MAX), 
@@ -115,11 +115,11 @@ namespace InterSystems.AspNet.Identity.Cache
             using (CacheCommand checkUserIndex = new CacheCommand(CheckUserNameIndexQuery, connection), 
                                 checkRoleIndex = new CacheCommand(CheckRoleNameIndexQuery, connection))
             {
-                if (checkUserIndex.ExecuteNonQuery() == 0)
+                if ((int)checkUserIndex.ExecuteScalar() == 0)
                     using (var createUserIndex = new CacheCommand(UserNameIndexQuery, connection))
                         createUserIndex.ExecuteNonQuery();
 
-                if (checkRoleIndex.ExecuteNonQuery() == 0)
+                if ((int)checkRoleIndex.ExecuteScalar() == 0)
                     using (var createRoleIndex = new CacheCommand(RoleNameIndexQuery, connection))
                         createRoleIndex.ExecuteNonQuery();
             }
